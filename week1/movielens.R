@@ -6,7 +6,7 @@ library(tidyverse)
 theme_set(theme_bw())
 
 # read ratings from csv file
-ratings <- read_csv('ratings.csv')
+ratings <- read_csv('ratings.csv', col_names = c('user_id','movie_id','rating','timestamp'))
 
 # for reference: same thing, using base R functions and explicitly setting column information
    ratings <- read.delim('ratings.csv',
@@ -31,7 +31,9 @@ summary(ratings)
 ####################
 
 # plot distribution of rating values (slide 21)
-
+group_by(ratings, rating) %>% mutate(count = n()) %>%
+  ggplot(aes(x = rating, y = count)) +
+  geom_bar(stat = 'identity')
 
 ####################
 # per-movie stats

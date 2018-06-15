@@ -34,6 +34,7 @@ filter(trips, tripduration < quantile(tripduration, .99)) %>%
   facet_wrap(~ usertype, ncol = 1, scale = 'free_y') 
 
 # plot the total number of trips over each day
+<<<<<<< HEAD
 mutate(trips, day = as.Date(starttime)) %>% 
   group_by(day) %>% 
   summarize(count = n()) %>% 
@@ -47,6 +48,10 @@ mutate(trips, age = year(starttime) - birth_year) %>% group_by(age, gender) %>%
   geom_point(stat = 'identity') + 
   scale_y_continuous(label = comma) +
   xlim(c(16, 80))
+=======
+
+# plot the total number of trips (on the y axis) by age (on the x axis) and gender (indicated with color)
+>>>>>>> 6b3820f0bf4c1ea131bdf00bd701b8fa02b1b3b4
 
 # plot the ratio of male to female trips (on the y axis) by age (on the x axis)
 # hint: use the spread() function to reshape things to make it easier to compute this 
