@@ -58,7 +58,8 @@ group_by(ratings, movie_id) %>% summarize(movie_pop=n()) %>%
 ggplot(aes(x= movie_pop)) +
 geom_histogram() +
 scale_x_log10() +
-scale_y_continuous(label = comma) 
+scale_y_continuous(label = comma) +
+xlab("Movie Popularity")
 ```
 
 ```{r dist-mean-ratings-by-movie}
@@ -74,8 +75,12 @@ ggplot(aes(x = avg)) +
 # rank movies by popularity and compute the cdf, or fraction of movies covered by the top-k moves (slide 25)
 # hint: use dplyr's rank and arrange functions, and the base R sum and cumsum functions
 # store the result in a new data frame so you can use it in creating figure 2 from the paper below
-
+movie_rank <- group_by(ratings, movie_id) %>% summarize(count = n()) %>% arrange(desc(count)) %>% 
+mutate(rank = row_number(), cdf = cumsum(count)/sum(count)) 
 # plot the CDF of movie popularity
+ggplot(movie_rank, aes(x = rank, y = cdf)) +
+  geom_point() +
+  scale_y_continuous(label = percent)
 ```
 
 
@@ -90,10 +95,10 @@ group_by(ratings, user_id) %>% summarize(avg = mean(rating), NumRatings = n())
 # plot distribution of user activity (= number of ratings the user made)
 # hint: try a log scale here
 group_by(ratings, user_id) %>% summarize(numRatings = n()) %>% 
-  filter(numRatings < quantile(numRatings, .9)) %>%
   ggplot(aes(x = numRatings)) +
   geom_histogram() +
-  scale_x_log10()
+  scale_x_log10() +
+  xlab("User Activity")
 ```
 
 # Anatomy of the long tail
@@ -111,9 +116,11 @@ group_by(ratings, user_id) %>% summarize(numRatings = n()) %>%
 # paper, produce one curve for the 100% user satisfaction level and
 # another for 90%---do not, however, bother implementing the null
 # model (shown in the dashed lines).
-movie_rank <- group_by(ratings, movie_id) %>% summarize(count = n()) %>% arrange(desc(count)) %>% mutate(rank = row_number())
+qualified_users <- group_by(ratings, user_id) %>% filter(n() > 10) 
 
-percentiles <- left_join(ratings, movie_rank) %>% group_by(user_id) %>% summarise(max = max(rank), `90perc` = quantile(rank,.9))
+movie_rank <- group_by(qualified_users, movie_id) %>% summarize(count = n()) %>% arrange(desc(count)) %>% mutate(rank = row_number())
+
+percentiles <- left_join(qualified_users, movie_rank) %>% group_by(user_id) %>% summarise(max = max(rank), `90perc` = quantile(rank,.9))
 
 `100P` <- select(percentiles, user_id, max) %>% group_by(max) %>% summarize(numUsers = n()) %>% arrange(max) %>% mutate(fracUsers100 = cumsum(numUsers)/ sum(numUsers))
 
