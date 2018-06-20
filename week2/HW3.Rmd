@@ -1,0 +1,15 @@
+---
+title: "OJRegression2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+oj <- read.csv("oj.csv")
+library(tidyverse)
+```
+
+```{r store demographics}
+glm(formula = logmove = )
+```
+
