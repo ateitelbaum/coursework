@@ -1,0 +1,85 @@
+---
+title: "OrangeJuiceData"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+oj <- read.csv('oj.csv')
+library(ggplot2)
+library(tidyverse)
+oj <- mutate(oj, logprice = log(price))
+```
+
+```{r Visualizing Price}
+#Box plot of prices
+ggplot(oj, aes(x = "Orange Juice Price", y = price)) +
+  geom_boxplot()
+
+#Box plot of log price
+ggplot(oj, aes(x = "Orange Juice Price", y = logprice)) +
+  geom_boxplot()
+
+#Box plot of prices by brand
+ggplot(oj, aes(x = brand, y = price)) +
+  geom_boxplot(aes(color = brand))
+
+#Box plot of log price by brand
+ggplot(oj, aes(x = brand, y = logprice)) +
+  geom_boxplot(aes(color = brand))
+
+```
+
+```{r Quantity/Price Relationship}
+#Plot logmove (log quantity) vs. log(price) for each brand
+ggplot(oj, aes(x = logprice, y = logmove)) +
+  geom_point(aes(color = brand))
+
+#regression of log quantity on log price
+summary(lm(logmove~logprice, oj))
+
+ggplot(oj, aes(x = logprice, y = logmove)) +
+  geom_point(aes(color = brand)) +
+  stat_smooth(method = "lm", color = "purple")
+
+#regression of log quantity on log price for each brand
+summary(lm(logmove~logprice, oj, subset = (brand == "tropicana")))
+summary(lm(logmove~logprice, oj, subset = (brand == "minute.maid")))
+summary(lm(logmove~logprice, oj, subset = (brand == "dominicks")))
+
+ggplot(oj, aes(x = logprice, y = logmove, color = brand)) +
+  geom_point(aes(color = brand), alpha = .5) +
+  stat_smooth(method = "lm")
+
+#Allow the elasticities to differ by brand
+summary(lm(data = oj, formula = logmove~logprice:brand))
+
+#Hold out 20% of your sample randomly.  Estimate the model on the remaining 80%
+sampledata <- sample_n(oj, .8* nrow(oj))
+testdata <- setdiff(oj, sampledata)
+model <- lm(sampledata, formula = logmove~logprice:brand)
+y_hat <- predict(model, testdata)
+testdata["predictedMove"] = y_hat
+select (testdata, brand, price, logmove, predictedMove) %>% mutate(residualsSquared = (logmove - predictedMove) ^2) %>% summarize(sum(residualsSquared))
+```
+How do the results change?
+slope of individual brands are more steep than of total slope
+
+```{r Featuring in store}
+#Which brand is featured the most?
+filter(oj, feat == 1) %>%
+ggplot(aes(x = logprice, y = logmove)) +
+  geom_point(aes(color = brand), position = "jitter")
+
+#What is the average price and featured rate of each brand?  
+group_by(oj, brand) %>% summarize(avg = mean(price), feature_rate = mean(feat))
+
+#How should incorporate the feature variable into our regression? Start with an additive formulation (e.g. feature impacts sales, but not through price).
+summary(lm(sampledata, formula = logmove~logprice:brand+feat))
+
+#Now run a model where features can impact sales and price sensitivity.
+summary(lm(sampledata, formula = logmove~logprice*brand+logprice*feat))
+
+```
+Based on your work, which brand has the most elastic demand, which as the least elastic? 
+Dominicks has the most elastic demand, and Tropicana has the least elastic demand

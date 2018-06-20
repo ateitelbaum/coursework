@@ -100,6 +100,21 @@ ggplot(sim_power, aes(Number_Obs)) + geom_line(aes(y=st_error),colour = "red")
 
 
 # Question: Take a normal distribution with mu = 10 and variance of 9 (e.g., standard deviation of 3).  Simulate a population of 10,000.  What is the sample size needed to make the standard error of the sample mean sufficiently small so that no more than 5% of the sample means are less 9?
+obs = 25
+n = 10000
+X = matrix(rnorm(n*p) * 3+10, n, p)
+sample_means = rep(0,total_samps)
+
+total_samps = 100
+sample_means = rep(0,total_samps)
+
+for (i in 1:total_samps) {
+subsample <- c(sample(X[,1], obs))
+sample_means[i] = mean(subsample)
+}
+
+count(sample_means < 9) / total_samps
+
   
   
 
