@@ -1,0 +1,46 @@
+---
+title: "PredictBikes"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(modelr)
+load("../week1/trips.RData")
+holidays <- read.csv("./BankHolidays.csv")
+
+daily_bike_weather <- trips %>% group_by(ymd) %>% summarize("count" = n()) %>% left_join(weather) %>% mutate(tmean = ((tmin + tmax)/2), dayofweek = weekdays(ymd)) %>% mutate(isweekend = (dayofweek == "Saturday" | dayofweek == "Sunday"), prevcount = lag(count))
+
+holidays <- holidays %>% mutate(ymd = as.Date(Date, "%m/%d/%Y")) %>% select(ymd, Bank.Holiday) 
+
+daily_bike_weather <- daily_bike_weather %>% left_join(holidays, by = c("ymd" = "ymd")) %>% filter(!is.na(prevcount) & !is.na(tmean))
+
+daily_bike_weather$Bank.Holiday <- replace_na(daily_bike_weather$Bank.Holiday, FALSE)
+```
+
+```{r pred values}
+set.seed(25)
+trainset <- sample_n(daily_bike_weather, .8*nrow(daily_bike_weather))
+testset <- setdiff(daily_bike_weather, trainset)
+
+model <- lm(formula = count ~ tmean+isweekend+prcp+snow+snwd+prevcount+ Bank.Holiday, data = trainset)
+summary(model)
+testset$y_hat <- predict(model, newdata = testset)
+trainset$y_hat <- predict(model, newdata = trainset)
+
+daily_bike_weather$y_hat <- predict(model, newdata = daily_bike_weather)
+
+ggplot(daily_bike_weather)+
+  geom_point(aes(x = ymd, y = count )) +
+  geom_line(aes(x = ymd, y = y_hat)) 
+
+ggplot(daily_bike_weather)+
+  geom_point(aes(x = y_hat, y = count))
+
+Rsqtest <- cor(testset$y_hat, testset$count)^2
+Rsqtrain <- cor(trainset$y_hat, trainset$count)^2
+RMSEtest <- rmse(model, testset)
+RMSEtrain <- rmse(model, trainset)
+```
+

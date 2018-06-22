@@ -85,25 +85,3 @@ ggplot(testset)+
   geom_line(aes(x = tmin, y = y_hat))
 ```
 
-```{r pred values}
-set.seed(25)
-daily_bike_weather$dayofweek <- weekdays(daily_bike_weather$ymd)
-daily_bike_weather$prevcount <- lag(daily_bike_weather$count)
-
-trainset <- sample_n(daily_bike_weather, .8*nrow(daily_bike_weather))
-testset <- setdiff(daily_bike_weather, trainset)
-
-model <- lm(formula = count ~ tmin*prcp+snow+tmax*tmin+dayofweek*prcp+prevcount, data = trainset)
-summary(model)
-testset$y_hat <- predict(model, newdata = testset)
-trainset$y_hat <- predict(model, newdata = trainset)
-
-ggplot(testset)+
-  geom_point(aes(x = ymd, y = count)) +
-  geom_line(aes(x = ymd, y = y_hat))
-
-Rsqtest <- cor(testset$y_hat, testset$count)^2
-Rsqtrain <- cor(trainset$y_hat, trainset$count)^2
-RMSEtest <- rmse(model, testset)
-RMSEtrain <- rmse(model, trainset)
-```
