@@ -1,0 +1,109 @@
+---
+title: "HW4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(modelr)
+load("../week1/trips.RData")
+```
+
+```{r collapse bike data}
+daily_bike_weather <- trips %>% group_by(ymd) %>% summarize("count" = n()) %>% left_join(weather) %>% filter(! is.na(tmin))
+```
+
+```{r OLS}
+
+set.seed(23)
+trainset <- sample_n(daily_bike_weather, .8*nrow(daily_bike_weather))
+testset <- setdiff(daily_bike_weather, trainset)
+
+model <- lm(formula = count ~ tmin, data = trainset)
+testset$y_hat <- predict(model, newdata = testset)
+trainset$y_hat <- predict(model, newdata = trainset)
+
+ggplot(testset)+
+  geom_point(aes(x = tmin, y = count)) +
+  geom_line(aes(x = tmin, y = y_hat))
+
+Rsqtest <- cor(testset$y_hat, testset$count)^2
+Rsqtrain <- cor(trainset$y_hat, trainset$count)^2
+RMSEtest <- rmse(model, testset)
+RMSEtrain <- rmse(model, trainset)
+```
+```{r OLS}
+
+set.seed(23)
+trainset <- sample_n(daily_bike_weather, .8*nrow(daily_bike_weather))
+testset <- setdiff(daily_bike_weather, trainset)
+
+model <- lm(formula = count ~ poly(tmin, 2), data = trainset)
+testset$y_hat <- predict(model, newdata = testset)
+trainset$y_hat <- predict(model, newdata = trainset)
+
+ggplot(testset)+
+  geom_point(aes(x = tmin, y = count)) +
+  geom_line(aes(x = tmin, y = y_hat))
+
+Rsqtest <- cor(testset$y_hat, testset$count)^2
+Rsqtrain <- cor(trainset$y_hat, trainset$count)^2
+RMSEtest <- rmse(model, testset)
+RMSEtrain <- rmse(model, trainset)
+```
+
+```{r polynomial}
+RMSEtrainp = c(1:10)
+RMSEtestp = c(1:10)
+Rsqtrainp = c(1:10)
+Rsqtestp = c(1:10)
+for (i in 1:10){
+  model <- lm(formula = count ~ poly(tmin, i), data = trainset)
+  testset$y_hat <- predict(model, newdata = testset)
+  trainset$y_hat <- predict(model, newdata = trainset)
+  
+  Rsqtestp[i] <- cor(testset$y_hat, testset$count)^2
+  Rsqtrainp[i] <- cor(trainset$y_hat, trainset$count)^2
+  RMSEtestp[i] <- rmse(model, testset)
+  RMSEtrainp[i] <- rmse(model, trainset)
+}
+
+Rsqdf = data.frame("power" = seq(1:10))
+Rsqdf$Rsq = Rsqtestp
+ggplot(Rsqdf, aes(x = power, y = Rsq)) +
+  geom_point()
+```
+
+```{r bestfit}
+model <- lm(formula = count ~ poly(tmin,4), data = trainset)
+testset$y_hat <- predict(model, newdata = testset)
+trainset$y_hat <- predict(model, newdata = trainset)
+
+ggplot(testset)+
+  geom_point(aes(x = tmin, y = count)) +
+  geom_line(aes(x = tmin, y = y_hat))
+```
+
+```{r pred values}
+set.seed(25)
+daily_bike_weather$dayofweek <- weekdays(daily_bike_weather$ymd)
+daily_bike_weather$prevcount <- lag(daily_bike_weather$count)
+
+trainset <- sample_n(daily_bike_weather, .8*nrow(daily_bike_weather))
+testset <- setdiff(daily_bike_weather, trainset)
+
+model <- lm(formula = count ~ tmin*prcp+snow+tmax*tmin+dayofweek*prcp+prevcount, data = trainset)
+summary(model)
+testset$y_hat <- predict(model, newdata = testset)
+trainset$y_hat <- predict(model, newdata = trainset)
+
+ggplot(testset)+
+  geom_point(aes(x = ymd, y = count)) +
+  geom_line(aes(x = ymd, y = y_hat))
+
+Rsqtest <- cor(testset$y_hat, testset$count)^2
+Rsqtrain <- cor(trainset$y_hat, trainset$count)^2
+RMSEtest <- rmse(model, testset)
+RMSEtrain <- rmse(model, trainset)
+```

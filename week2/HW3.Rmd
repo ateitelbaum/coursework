@@ -5,11 +5,105 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-oj <- read.csv("oj.csv")
 library(tidyverse)
+oj <- read.csv("oj.csv")
+oj<- mutate(oj, logprice = log(price))
 ```
 
 ```{r store demographics}
-glm(formula = logmove = )
+summary(lm(oj, formula = (logmove~logprice*brand*feat)))
+
+#With Demographics
+model1b<- lm(formula = (logmove~logprice*brand*feat+AGE60+EDUC+ETHNIC+INCOME+HHLARGE+WORKWOM+HVAL150), data = oj)
+summary(model1b)
 ```
+What demographics are significantly (t>2) related to demand? 
+All of them
+How much did the adjusted R-squared improve with the addition of these variables?
+.04
+
+```{r store demographics - HVAL150 and EDUC} 
+#What are the means and percentiles of each of these variables?
+summary(oj$HVAL150)
+summary(oj$EDUC)
+
+#If we move from the median value of HVAL150 to the 75th percentile (3rd quartile), how much does log(quantity) change each week on average?
+exp(coef(model1b)["HVAL150"] * (summary(oj$HVAL150)["3rd Qu."]-summary(oj$HVAL150)["Median"]))
+
+#If we move from the median value of HVAL150 to the 75th percentile (3rd quartile), how much does log(quantity) change each week on average?
+exp(coef(model1b)["EDUC"] * (summary(oj$EDUC)["3rd Qu."]-summary(oj$EDUC)["Median"]))
+```
+Which is the more important predictor of demand? 
+HVAL150
+```{r}
+#Now let's see if these variables impact price sensitivity. Add two interaction terms (with logprice) to the model to test this
+#What are the coefficients on the interaction terms? 
+model <- lm(formula = (logmove~logprice*brand*feat+HVAL150*logprice+EDUC*logprice+AGE60+ETHNIC+INCOME+HHLARGE+WORKWOM), data = oj)
+coef(model)["logprice:HVAL150"]
+coef(model)["logprice:EDUC"]
+```
+Recall, positive values indicate lower price sensitivity and negative values indicate greater price sensitivity. Do your estimates make sense based on your intuition? 
+The estimate for HVAL150 makes sense- it's positive- not affected so much by price
+The estimate for EDUC doesn't make sense - negative - why would there be greater price sensitivty?
+
+The coefficient on HVAL150 is `r coef(model)["HVAL150"]`.
+For model1b it was `r coef(model1b)["HVAL150"]`.
+The coefficient on EDUC is `r coef(model)["EDUC"]`.
+For model1b it was `r coef(model1b)["EDUC"]`.
+
+```{r}
+#Similar to 2b, if we move from the median value of each variable to the 3rd quartile, how much does elasticity change?
+exp(coef(model)["logprice:HVAL150"] * (summary(oj$HVAL150)["3rd Qu."]-summary(oj$HVAL150)["Median"]))
+
+exp(coef(model)["logprice:EDUC"] * (summary(oj$EDUC)["3rd Qu."]-summary(oj$EDUC)["Median"])) 
+```
+HVAL150 is more important to price sensitivity
+
+```{r Intertemporal Subsitution}
+df1 <-oj
+df1$week<-df1$week+1  
+# df1 now has NEXT week and not the current one.  If we merge this by #weeks now, this is last week's price (e.g., "lagged price").
+myvars <- c("price", "week", "brand","store")
+df1 <- df1[myvars]
+lagged <- merge(oj, df1, by=c("brand","store","week")) 
+colnames(lagged)[19] <- "lagged_price"
+summary(lm(formula = (logmove~logprice*brand + feat +log(lagged_price) * brand), data = lagged))
+
+```
+
+```{r 5-fold cross validation.}
+set.seed(13)
+randoj <- sample_n(lagged, nrow(lagged))
+randoj$rand_obs <- seq(1, nrow(randoj))
+randoj$partition <- randoj$rand_obs %%5 +1
+MSE = c(1:5)
+
+for (i in (1:5)){
+  ojtest <- filter(randoj, partition == i)
+  ojtrain <- anti_join(randoj, ojtest)
+  reg1 <- lm(logmove~logprice*brand+feat+HHLARGE*logprice+EDUC*logprice+AGE60+ETHNIC+INCOME+HVAL150+WORKWOM, ojtrain)
+  ojtest$logmove_hat <- predict(reg1, ojtest)
+  MSE[i] = mean((ojtest$logmove_hat - ojtest$logmove)^2)
+}
+mean(MSE)  
+```
+The mean MSE is `r mean(MSE)`
+
+```{r LASSO}
+library(glmnet)
+```
+
+```{r}
+oj_compare <- group_by(oj, store, week) %>% select(store, week, brand, price) %>% spread(brand, price)
+oj_compare_price <- merge(oj_compare, oj, by = c("store", "week"))
+
+reg <- glm(logmove ~ log(dominicks) + log(minute.maid) + log(tropicana), data = oj_compare_price)
+summary(reg)
+
+mm <- oj_compare_price %>% filter(brand == "minute.maid")
+reg <- glm(logmove ~ log(dominicks) + log(minute.maid) + log(tropicana), data = mm)
+summary(reg)
+```
+
+
 

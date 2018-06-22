@@ -126,9 +126,9 @@ percentiles <- left_join(qualified_users, movie_rank) %>% group_by(user_id) %>% 
 
 `90P` <- select(percentiles, user_id, `90perc`) %>% group_by(`90perc`) %>% summarize(numUsers = n()) %>% arrange(`90perc`) %>% mutate(fracUsers90 = cumsum(numUsers)/ sum(numUsers))
 
-full_join(`100P`, `90P`, by = c('max' = '90perc')) %>% select(max, fracUsers90, fracUsers100) %>% gather("table", "fracUsers", fracUsers90, fracUsers100) %>%
-  ggplot(aes(x = max, y = fracUsers, color = table)) + 
-  geom_smooth() +
+full_join(`100P`, `90P`, by = c('max' = '90perc')) %>% select(max, fracUsers90, fracUsers100) %>% gather("percentile", "fracUsers", fracUsers90, fracUsers100) %>%
+  ggplot(aes(x = max, y = fracUsers, color = percentile)) + 
+  geom_point() +
   xlab("Inventory Size") +
   ylab("Percent of Users Satisfied")
 ```
