@@ -1,0 +1,22 @@
+---
+title: "PredictTrips"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(modelr)
+load("../week1/trips.RData")
+holidays <- read.csv("./BankHolidays.csv")
+
+daily_bike_weather <- trips %>% group_by(ymd) %>% summarize("count" = n()) %>% left_join(weather) %>% mutate(tmean = ((tmin + tmax)/2), dayofweek = weekdays(ymd)) %>% mutate(isweekend = (dayofweek == "Saturday" | dayofweek == "Sunday"), prevcount = lag(count))
+
+holidays <- holidays %>% mutate(ymd = as.Date(Date, "%m/%d/%Y")) %>% select(ymd, Bank.Holiday) 
+
+daily_bike_weather <- daily_bike_weather %>% left_join(holidays, by = c("ymd" = "ymd")) %>% filter(!is.na(prevcount) & !is.na(tmean))
+
+daily_bike_weather$Bank.Holiday <- replace_na(daily_bike_weather$Bank.Holiday, FALSE)
+```
+
+
