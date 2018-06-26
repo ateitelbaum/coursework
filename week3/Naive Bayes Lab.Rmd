@@ -1,0 +1,40 @@
+---
+title: "Naive Bayes Lab"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(e1071)
+```
+
+```{r exercise A}
+customers <- data.frame(buy=c("yes","no","no","yes"),
+                        income=c("high","high","medium","low"))
+
+#What is the probability that a customer has a high income give that he or she bought your product?
+classifier <- naiveBayes(income ~ buy, customers)
+
+#Predict the probability of buying given that a customer has high income.
+classifier <- naiveBayes(buy ~ income, customers)
+classifier
+test <- data.frame(income=c("high"))
+test$income <- factor(test$income, levels=c("high","medium", "low"))
+prediction <- predict(classifier, test ,type="raw")
+prediction
+```
+
+```{r exercise B}
+customers <- data.frame(buy=c("yes","no","no","yes"), 
+                    income=c("high","high","medium","low"),
+                    gender=c("male","female","female", "male"))
+
+#predict the probability of buying given that a customer has a high income and is male
+classifier <- naiveBayes(buy ~ income + gender, customers)
+classifier
+test <- data.frame(income=c("high"), gender=c("male"))
+test$income <- factor(test$income, levels=c("high","medium", "low"))
+test$gender <- factor(test$gender, levels=c("male","female"))
+prediction <- predict(classifier, test ,type="raw")
+prediction
+```
