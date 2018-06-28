@@ -1,0 +1,52 @@
+---
+title: "ISTproblems"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r load files}
+magnets <- read.csv("magnets.csv")
+```
+
+#Question 12.1
+```{r}
+summary(magnets)
+t.test(control$change)
+```
+
+
+#Question 13.1
+```{r}
+#Is there a significance difference between the treatment and the control
+#groups in the expectation of the reported score of pain before the application
+#of the device?
+t.test(score1 ~ active, magnets)
+
+#Is there a significance difference between the treatment and the control
+#groups in the variance of the reported score of pain before the application
+#of the device?
+var.test(score1 ~ active, magnets)
+
+#Is there a significance difference between the treatment and the control
+#groups in the expectation of the change in score that resulted from the
+#application of the device?
+t.test(change ~ active, magnets)
+
+# Is there a significance difference between the treatment and the control
+#groups in the variance of the change in score that resulted from the application
+#of the device?
+var.test(change ~ active, magnets)
+#Make a plot of the distribution of outcomes(change) split by the treatment
+ggplot(magnets, aes(fill = active))+
+  geom_histogram(aes(change), position = "dodge", alpha = 0.5)
+
+#find Cohen's d
+sd <- sd(magnets$change)
+magnets %>% group_by(active) %>% summarise(count = n(), avg = mean(change)) %>% summarize((first(avg)-last(avg))/sd)
+
+
+```

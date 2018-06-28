@@ -14,7 +14,7 @@ customers <- data.frame(buy=c("yes","no","no","yes"),
 
 #What is the probability that a customer has a high income give that he or she bought your product?
 classifier <- naiveBayes(income ~ buy, customers)
-
+classifier
 #Predict the probability of buying given that a customer has high income.
 classifier <- naiveBayes(buy ~ income, customers)
 classifier
@@ -30,11 +30,12 @@ customers <- data.frame(buy=c("yes","no","no","yes"),
                     gender=c("male","female","female", "male"))
 
 #predict the probability of buying given that a customer has a high income and is male
-classifier <- naiveBayes(buy ~ income + gender, customers)
+classifier <- naiveBayes(buy ~ gender, customers)
 classifier
 test <- data.frame(income=c("high"), gender=c("male"))
 test$income <- factor(test$income, levels=c("high","medium", "low"))
-test$gender <- factor(test$gender, levels=c("male","female"))
-prediction <- predict(classifier, test ,type="raw")
+test$gender <- factor(test$gender, levels=c("female","male"))
+test
+prediction <- predict(classifier, test, type="raw")
 prediction
 ```
