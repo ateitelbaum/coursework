@@ -1,0 +1,66 @@
+---
+title: "HW4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Question 1: Picking Control Variables
+Imagine you have one data point from every county in the US that gives the unemployment rate in that county in 2010 and the amount of money spent by that country on job training programs in 2008. You want to know the treatment e???ect of money spent on job training programs onto the outcome of unemployment (as measured two years later). List as many examples as you can think of for each category of control variable:
+
+###Confounding Variables
+* amount of money the county has
+* job training program the previous year
+* unemployment in 2008
+
+###Variance Reducing Varaible
+* number of open jobs
+* economic growth/recession
+
+###Unrelated variables
+* most popular song by county
+
+###Bad controls
+* unemployment rate in 2009
+
+#Question 2a
+```{r load data, include = FALSE}
+cr_data <- read.csv("C&R_dataset.csv")
+base <- names(cr_data)[c(1:10)]
+interview1 <- names(cr_data)[c(11:17, 20:27)]
+interview2 <- names(cr_data)[c(31:37, 39:46)]
+before <- select(cr_data, interview1)
+after <- select(cr_data,interview2)
+```
+List the outcome metrics that you think could be impacted by the minimum wage change and give a brief explanation of why.
+
+* number of part time and full time employees would decrease because they would have to pay them more.
+* Starting wage would increase to the new minimum wage
+* Increase time and First Increase - would take longer to give first wage increase and would give them less.
+* PSoda, PFry and PEntree would all be higher because since they are paying their employees more, everything cost more.
+* Number of registers would decrease because there would be less employees.
+
+#Question 2b
+Compute the 'di???s'. Check to see if each outcome metric changed in a statistically signi???cant way between the two interviews.
+```{r Question 2b}
+diff <- cbind(STATE = cr_data$STATE, cr_data[interview1] - cr_data[interview2])
+get_p <- function(x){
+  return (t.test(x, mu = 0)$p.value)
+}
+diff %>% group_by(STATE) %>% summarize_all(get_p) %>% View
+```
+
+#Question 2c
+Now compute the "di???-in-di???" via the regression method
+```{r regression method}
+reg <- lm(formula = EMPFT2-EMPFT ~ STATE, cr_data)
+summary(reg)
+
+reg <- lm(formula = EMPPT2 - EMPPT ~ STATE, cr_data)
+summary(reg)
+
+reg <- lm(formula = PSODA2- PSODA ~ STATE, cr_data)
+summary(reg)
+```

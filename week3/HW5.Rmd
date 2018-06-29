@@ -1,0 +1,62 @@
+---
+title: "HW5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+data <- read.csv("Lee(2007)_RDReplication.csv") %>% select(DWinNxt, DifDPct, ForgnPct, BlackPct, UrbanPct, DWinPrv, DemWin)
+library(rdd)
+```
+
+#Question 1b
+Run a simple regression to try and predict DWinNxt with DemWin. Observe the coe???cient on DemWin. Do you think it gives an unbiased estiamte of the incumbency e???ect. Why or why not?
+```{r Question 1b}
+model <- lm(DWinNxt ~ DemWin, data)
+summary(model)
+```
+The coefficient raises the chances of the incumbent to close to 90%. I think it doesn't give an unbiased estimate of the model because there are other factors that cause the incumbent to be reelected- the same factors that caused him to get elected.
+
+#Question 1c
+Now consider the various potential controls I mentioned above. Classify each one as a confounding, variance reducing, unrelated, or bad control. Introduce some/all of these variables to your regression and see what happens to the coe???cient on DemWin.
+
+* ForgnPct- confounding
+* GovWkPct- unrelated 
+* BlackPct- confounding
+* UrbanPct- confounding
+* DWinPrv - confounding
+* YearElec- unrelated
+* CDNum - unrelated
+```{r Question 1c}
+model <- lm(DWinNxt ~ DemWin + ForgnPct + BlackPct + UrbanPct + DWinPrv, data)
+summary(model)
+```
+The Coefficient on DemWin decreases,
+
+#Question 1d
+Give an additional example of a bad control variable in this setting. It does not have to be one that it is present in the dataset.
+Whether a democrat won the next year in the election.
+
+#Question 1e
+Now use DifDPct as a forcing variable to run a regression discontinuity to estimate the incumbency advantage. Generate a cubic polynomial and pick a window of 10% (this just means to drop data that is more than 15% from the discontinuity) on either side of the threshold (50%). Run a regression discontinuity. How does the coe???cient you got compare to in (b) and (c).
+```{r Question 1e}
+dataWindow <- data %>% filter(DifDPct > -15 & DifDPct < 15 & ! is.na(DifDPct))
+model <- lm(DWinNxt ~ DemWin*poly(DifDPct,3, raw = TRUE) + ForgnPct + BlackPct + UrbanPct + DWinPrv, dataWindow)
+summary(model)
+dataWindow$pred <- predict(model, dataWindow)  
+dataWindow %>% ggplot(aes(x = DifDPct, y = pred)) +
+  geom_point() +
+  geom_smooth(aes(color = DifDPct > 0))
+```
+The coefficient on DemWin is smaller than in part b and c. Some of the bias is removed, but there is still an incumbency effect.
+
+#Question 1f
+Use the functions RDestimate and plot to do a faster regression discontinuity anlaysis.
+```{r}
+est <- RDestimate(DWinNxt ~ DifDPct, dataWindow)
+plot(est)
+title(xlab = "DifDPct", ylab = "Prediction")
+summary(est)
+```
+There is a similar coefficient to part e.
