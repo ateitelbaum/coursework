@@ -1,0 +1,59 @@
+---
+title: "Decision_Trees_Exercise"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tree)
+library(tidyverse)
+titanic <- read.csv("../week3/titanic_train.csv")
+titanic_test <- read.csv("titanic_test.csv")
+```
+
+## Question 2
+What percentage of passengers in our data set survived?
+```{r question 2}
+titanic %>% group_by(Survived) %>% summarize("count" = n()) %>% mutate(percent = count/ sum(count) * 100)
+```
+
+##Question 3
+Which variables do you think may be good predictors of the survival on the Titanic?
+```{r question 3}
+model <- glm(Survived ~ as.factor(Pclass) + as.factor(Sex) * Age, data = titanic, family = "binomial")
+summary(model)
+```
+
+##Question 4
+Estimate a decision tree predicting survival using age and sex as predictors. Describe your results.
+```{r question 4}
+tree1 <- tree(as.factor(Survived) ~ as.factor(Sex)+ Age, titanic)
+summary(tree1)
+plot(tree1)
+text(tree1, pretty = 0)
+```
+
+##Question 5
+Estimate a decision tree using age, sex and passenger class. Describe your results.
+```{r question 5}
+tree2 <- tree(as.factor(Survived) ~ as.factor(Sex)+Age + as.factor(Pclass), titanic)
+summary(tree2)
+plot(tree2)
+text(tree2, pretty = 0)
+summary(tree2)
+```
+
+##Question 6
+Estimate your own decision tree with your own set of predictors.
+```{r question 6}
+tree3 <- tree(as.factor(Survived) ~ as.factor(Sex) + Age + SibSp + as.factor(Pclass), titanic)
+summary(tree3)
+plot(tree3)
+text(tree3, pretty = 0)
+```
+
+##Question 7
+Make predictions based on test data
+```{r question 7}
+titanic_test$y_hat <- predict(tree3, titanic_test, type = "class")
+```

@@ -15,7 +15,7 @@ magnets <- read.csv("magnets.csv")
 #Question 12.1
 ```{r}
 summary(magnets)
-t.test(control$change)
+t.test(magnets$change)
 ```
 
 

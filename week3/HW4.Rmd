@@ -43,7 +43,7 @@ List the outcome metrics that you think could be impacted by the minimum wage ch
 * Number of registers would decrease because there would be less employees.
 
 #Question 2b
-Compute the 'di???s'. Check to see if each outcome metric changed in a statistically signi???cant way between the two interviews.
+Compute the 'diffs'. Check to see if each outcome metric changed in a statistically signi???cant way between the two interviews.
 ```{r Question 2b}
 diff <- cbind(STATE = cr_data$STATE, cr_data[interview1] - cr_data[interview2])
 get_p <- function(x){
@@ -53,7 +53,7 @@ diff %>% group_by(STATE) %>% summarize_all(get_p) %>% View
 ```
 
 #Question 2c
-Now compute the "di???-in-di???" via the regression method
+Now compute the "diff-in-diff" via the regression method
 ```{r regression method}
 reg <- lm(formula = EMPFT2-EMPFT ~ STATE, cr_data)
 summary(reg)
