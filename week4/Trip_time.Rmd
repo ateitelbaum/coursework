@@ -1,0 +1,39 @@
+---
+title: "Trip_time"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+load('../week1/trips.RData')
+```
+Create a function that computes historical trip times between any two stations:
+Take the trips dataframe and two station names as inputs
+Return a 168-by-6 dataframe with summary statistics of trip times for each hour of the week (e.g., Monday 9am, Monday 10am, etc.), where the summary statistics include:
+* Average number of trips in that hour
+* Average and median trip times for that hour
+* Standard deviation in trip time for that hour
+* Upper and lower quartiles of trip time for that hour
+```{r}
+trip_time <- function(df, start, end){
+  hour_stats <- df %>% filter(start_station_name == start & end_station_name==end) %>% mutate(day = wday(as.Date(starttime), label = TRUE), hour = hour(starttime)) %>% group_by(day, hour) %>% 
+    summarize("count" = n(), 
+              "avg" = mean(tripduration/60), 
+              "median" = median(tripduration/60),
+              "sd" = sd(tripduration/60),
+              "lower_quart" = quantile(tripduration/60, probs = .25),
+              "upper_quart" = quantile(tripduration/60, probs = .75)) 
+}
+```
+
+Make a plot of the results, where each facet is a day of the week, the x axis shows hour of the day, and the y axis shows average trip time, with transparent ribbons to show the standard deviation in trip time around the mean
+```{r}
+penn_to_grand = trip_time(trips, "8 Ave & W 31 St", "E 43 St & Vanderbilt Ave")
+ggplot(penn_to_grand, aes(x = hour, y = avg)) +
+  geom_point()+
+  geom_ribbon(aes(ymin = avg - sd, ymax = avg + sd), alpha = .2) +
+  scale_y_continuous() +
+  facet_wrap(~day, scale = "free")
+```
